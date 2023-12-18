@@ -1,0 +1,8 @@
+{
+  "name": "punisher-model",
+  "version": "0.0.1",
+  "description": "Functions used in the punisher function",
+  "webppl": {
+    "wppl": ["punisher.wppl", "observer.wppl", "comm_punisher", "utils.wppl", "obs_beliefs.wppl", "_range.wppl"]
+  }
+}

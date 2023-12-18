@@ -1,0 +1,108 @@
+var range = function(x, utils, ys, xs) {
+
+  var cost = x.start
+
+  var params = {
+    actions: [0, 1],
+    beta: [3],
+    cost: 0.25, // not important 
+    wrongness: cost,
+    alphas: {
+      Aself: 0,
+      Asocial: 1,
+      Atarget: 0,
+      Arep: 0
+    }
+  }
+
+  var new_utils = extend(utils, {params})
+  
+  var make_punisher = new_utils.make_punisher
+  
+  var p1 = make_punisher(params, new_utils)
+  var act = p1.act
+  var dist = act()
+
+  var point = 1 - Math.exp(dist.score(0))
+  
+  var new_ys = ys.concat(point.toString())
+  var new_xs = xs.concat(cost.toString())
+  
+  console.log(cost.toPrecision(2),' done! : ', point)
+  
+  
+  if (cost > x.stop) {
+    var new_x = {start: cost-x.inc, stop: x.stop, inc: x.inc}
+    return range(new_x, utils, new_ys, new_xs)
+  }
+  else {
+    return { y: new_ys, x: new_xs }
+  }
+}
+
+console.log('starting...')
+
+var out = range({start: 2, stop: -2, inc: 0.01}, utils, [], [])
+
+console.log(out.y)
+csv.write([out.x, out.y], './data/asocial4.csv')
+
+var vals = wrongness_
+var vals2 = _.range(0, 1, 0.02)
+
+var run_ = function(alpha, idx, policies) {
+    if(idx===50) {
+        //csv.write([policies], './data/asocial_wrongness_utarget/'+alpha.toPrecision(2)+'.csv')
+        return 'done'
+    }
+    else {
+        var arep = 0//alpha
+        var asocial = 1//(1 - arep)/2.3
+        var atarget = 0//asocial
+        var aself = 0//0.3*asocial
+
+        var x = vals2[idx]*4-2
+        console.log('utarget', x)
+        var y = vals[alpha]//*4 - 2
+        var params = {
+            actions: [0, 1],
+            beta: [3],
+            cost: 0, // uself
+            wrongness: y, // usocial
+            conseq: x, // utarget
+            alphas: {
+              Aself: aself,
+              Asocial: asocial,
+              Atarget: atarget,
+              Arep: arep
+            }
+        }
+        var new_utils = extend(utils, {params})
+        var make_punisher = new_utils.make_punisher
+        var make_observer = new_utils.make_observer
+        var o1 = make_observer(new_utils)   
+        
+        var cp1 = make_punisher(params, new_utils, o1)
+        var act = cp1.act
+        var dist = act()
+
+        var policy = 1 - Math.exp(dist.score(0))
+        //console.log('pol', policy, 'arep', alpha, 'asocial', asocial, 'idx', idx, 'x', x, 'ope!')
+        
+        var new_policies = _.concat(policies, policy)
+        var new_idx = idx + 1
+        return run_(alpha, new_idx, new_policies)
+    }
+}
+
+var vary_alpha_ = function(alpha) {
+    if (alpha < 0) {
+        return 'done'
+    }
+    else{
+        run_(alpha, 0, [])
+        vary_alpha_(alpha-1)
+    }
+}
+
+vary_alpha_(49)

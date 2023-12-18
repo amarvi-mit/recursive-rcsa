@@ -1,0 +1,45 @@
+var get_wrongness = function() {
+  //var wrongness = beta({a: 7.6984, b: 0.6422})
+  //var wrongness = uniform({a:0, b:1})
+  var wrongness = 1
+  return wrongness
+}
+
+var get_alphas = function() {
+  var alphas = {
+    Aself: beta({a: 1, b: 1}),
+    Asocial: beta({a: 1.513, b: 0.8474}),
+    Atarget: beta({a: 1.3524, b: 1.0851}),
+    Arep: 0
+  }
+  return alphas
+}
+
+var make_observer = function(utils) {
+  var get_wrongness = utils.get_wrongness
+  var get_alphas = utils.get_alphas
+  var make_punisher = utils.make_punisher
+  var utils = utils
+  
+  var make_observation = dp.cache(function(action) {
+    return Infer( { method: 'MCMC', samples: 300000, model() {
+      var beliefs = {
+        wrongness: get_wrongness(),
+        alphas: get_alphas(),
+      }
+      
+      var punisher = make_punisher(beliefs, utils)
+      var act = punisher.act
+      
+      observe(act(), action)
+      
+      var posteriors = {
+        wrongness: beliefs.wrongness,
+        alphas: beliefs.alphas
+      }
+      return posteriors
+    }})
+  })
+
+  return { make_observation: make_observation }
+}

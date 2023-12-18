@@ -1,0 +1,76 @@
+var params = {
+    actions: [0, 1],
+    beta: [3],
+    cost: 0, // uself
+    wrongness: 0, // usocial
+    conseq: -0.5, // utarget
+    alphas: {
+      Aself: 1,
+      Asocial: 0,
+      Atarget: 0,
+      Arep: 0
+    }
+}
+
+var new_utils = extend(utils, {params})
+
+var make_observer = new_utils.make_observer
+var o1 = make_observer(new_utils)
+var make_observation = o1.make_observation
+
+var dist = make_observation(0)
+var alpha = marginalize(dist, 'alphas')
+var Aself = marginalize(alpha, 'Aself')
+var Asocial = marginalize(alpha, 'Asocial')
+var Atarget = marginalize(alpha, 'Atarget')
+//////////////
+
+/////////////
+var supp = Aself.support()
+csv.write([supp], './test_sself.csv')
+var _func = function(iter, probs) {
+    if (iter===supp.length) {
+        return probs
+    }
+    else{
+        var p = Math.exp(Aself.score(supp[iter]))
+        //console.log(iter + ': ' + supp[iter] + '->' + p)
+        var new_probs = _.concat(probs, p)
+        _func(iter+1, new_probs)
+    }
+}
+var what1 = _func(0, [])
+csv.write([what1], './test_self.csv')
+
+var supp = Asocial.support()
+csv.write([supp], './test_ssocial.csv')
+var _func2 = function(iter, probs) {
+    if (iter===supp.length) {
+        return probs
+    }
+    else{
+        var p = Math.exp(Asocial.score(supp[iter]))
+        //console.log(iter + ': ' + supp[iter] + '->' + p)
+        var new_probs = _.concat(probs, p)
+        _func(iter+1, new_probs)
+    }
+}
+var what2 = _func2(0, [])
+csv.write([what2], './test_social.csv')
+
+var supp = Atarget.support()
+csv.write([supp], './test_starget.csv')
+var _func3 = function(iter, probs) {
+    if (iter===supp.length) {
+        return probs
+    }
+    else{
+        var p = Math.exp(Atarget.score(supp[iter]))
+        //console.log(iter + ': ' + supp[iter] + '->' + p)
+        var new_probs = _.concat(probs, p)
+        _func(iter+1, new_probs)
+    }
+}
+var what3 = _func3(0, [])
+csv.write([what3], './test_target.csv')
+

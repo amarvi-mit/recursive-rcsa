@@ -1,0 +1,12 @@
+var utils = {
+  // observer functions
+  make_observer: make_observer,
+  get_wrongness: get_wrongness,
+  get_alphas: get_alphas,
+  
+  // punisher functions
+  get_Ucomm: get_Ucomm,
+  make_punisher: make_punisher,
+  get_Ubase: get_Ubase,
+  weightU: weightU
+}

@@ -1,0 +1,103 @@
+var get_Ubase = function(action, wrongness, cost, conseq) {
+  var get_Uself = function(action) {
+    //console.log(cost)
+    var table = {0: 0,
+            1: cost,
+            2: 0.5,
+            3: 0.75}
+    return table[action]  
+  }
+  
+  var get_Usocial = function(action) {
+    var harshness = -1*(wrongness + get_Utarget(action))
+    var Usocial = (wrongness>0) ? 
+        ((harshness > 0) ? -0.4*harshness : harshness) 
+                   : wrongness//wrongness*action
+    //console.log('uscoial', Usocial)
+    return Usocial  
+  }
+  
+  var get_Utarget = function(action) {
+    var table = {0: 0,
+            1: conseq,
+            2: -.7,
+            3: -.9}
+    var val = table[action]
+    
+    return (val > 0) ? (-0.2*val) : (val)
+  }
+   
+  var utilities = {
+    Uself: get_Uself(action),
+    Usocial: get_Usocial(action), 
+    Utarget: get_Utarget(action)
+  }
+  //console.log(cost)
+  return utilities
+}
+var get_Ucomm = function(action, obs) {
+  var make_obs = obs.make_observation
+  var o_posteriors = make_obs(action)
+  
+  var get_Urep = function() {
+    var alphas = marginalize(o_posteriors, 'alphas')
+    var dist = marginalize(alphas, 'Aself')
+    return -1 * expectation(dist)
+  }
+  
+  return {
+    Urep: get_Urep()
+  } 
+}
+
+var weightU = function(eU, alphas) {
+  var Ubase = alphas['Aself']*eU['Uself'] + 
+      alphas['Asocial']*eU['Usocial'] + 
+      alphas['Atarget']*eU['Utarget'] 
+  
+  var Uextra = (eU['Urep']) ? alphas['Arep']*eU['Urep'] : 0
+  
+  var Utotal = Ubase + Uextra
+  return Utotal
+}
+
+var make_punisher = function(beliefs, utils, obs) {
+  var params = extend(utils.params, beliefs)
+  var make_observer = utils.make_observer
+
+  var avail_act = params.actions
+  var beta = params.beta
+  
+  var obs = (obs) ? obs : {}
+  
+  var act = function() {
+    var alphas = params.alphas
+    return Infer({ method: 'enumerate', model() {
+      var action = uniformDraw(avail_act)
+      var eU = expectedU(action, params)
+      //console.log(action, 'eU', eU)
+      factor(beta * eU)
+      return action
+    }})
+  }
+  
+  var expectedU = function(action, params) {
+    var get_Ubase = utils.get_Ubase
+    var get_Ucomm = utils.get_Ucomm
+    var weightU = utils.weightU
+    var alphas = params.alphas
+    var wrongness = params.wrongness
+    var cost = params.cost
+    var conseq = params.conseq
+    
+    var U1 = get_Ubase(action, wrongness, cost, conseq)
+    var U2 = (alphas.Arep === 0) ? {} : get_Ucomm(action, obs)
+    var eU = extend(U1, U2)
+        
+    var totalU = weightU(eU, alphas)
+    
+    return totalU
+  }
+  
+  return { act: act }
+}
